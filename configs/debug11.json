@@ -1,0 +1,88 @@
+{
+  "dataset_reader": {
+    "type": "two_stage",
+    "pretrained_model_pth": "bert-base-chinese",
+    "mode": "s2po"
+  },
+  "validation_dataset_reader": {
+    "type": "valid",
+    "pretrained_model_pth": "bert-base-chinese"
+  },
+  "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt",
+  "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt",
+  "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt",
+  "evaluate_on_test": true,
+  "model": {
+    "type": "twostagemodel",
+    "encoder": {
+      "type": "encoder",
+      "text_field_embedder": {
+        "type": "basic",
+//        "allow_unmatched_keys": true,
+//        "embedder_to_indexer_map": {
+//          "bert": ["bert", "bert-offsets"]
+//        },
+        "token_embedders": {
+          "tokens": {
+            "type": "pretrained_transformer",
+            "model_name": "bert-base-chinese",
+            "max_length": 500
+          }
+        }
+      }
+    },
+    "one_decoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 768,
+        "num_layers": 1,
+        "hidden_dims": 1,
+        "activations": "linear"
+      }
+    },
+    "many_decoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 768,
+        "num_layers": 1,
+        "hidden_dims": 49,
+        "activations": "linear"
+      }
+    },
+    "span_extractor": {
+      "type": "endpoint",
+      "input_dim": 768,
+      "combination": "x+y"
+    },
+    "mode": "s2po"
+  },
+  "iterator": {
+    "type": "bucket",
+    "sorting_keys": [["tokens", "num_tokens"]],
+    "batch_size": 4
+  },
+  "validation_iterator": {
+    "type": "basic",
+    "batch_size": 8
+  },
+  "distributed": {
+    "cuda_devices": [0, 1]
+  },
+  "trainer": {
+    "optimizer": {
+      "type": "adam",
+      "lr": 5e-5
+
+    },
+    "learning_rate_scheduler": {
+      "type": "slanted_triangular",
+      "num_epochs": 15,
+      "num_steps_per_epoch": 8829
+    },
+    "validation_metric": "+f1",
+    "num_serialized_models_to_keep": 1,
+    "num_epochs": 5,
+    //        "grad_norm": 10.0,
+    "patience": 3
+  }
+}

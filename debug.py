@@ -14,3 +14,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+import sys
+from allennlp.commands import main
+print(os.getcwd())
+command = "allennlp train ./configs/debug2.json -s ./output/debug -f --include-package my_library"
+sys.argv = command.split()
+
+if __name__ == '__main__':
+    print(sys.argv)
+    main()
