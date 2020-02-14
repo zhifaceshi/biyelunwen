@@ -24,7 +24,7 @@ from transformers import AutoTokenizer, AutoModel
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # pretrained_model_pth =  '/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/Bert/bert-base-chinese-vocab.txt'
 # AutoTokenizer.from_pretrained(pretrained_model_pth)
-model_name = 'bert-base-chinese'
+model_name = '/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/'
 # PretrainedTransformerIndexer(model_name)
 AutoTokenizer.from_pretrained(model_name)
 AutoModel.from_pretrained(model_name)

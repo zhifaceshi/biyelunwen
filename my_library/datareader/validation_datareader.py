@@ -16,7 +16,7 @@ import numpy
 from allennlp.common.file_utils import cached_path
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Token
 from allennlp.data.fields import TextField, SpanField, ArrayField, MetadataField
-from allennlp.data.token_indexers import SingleIdTokenIndexer
+from allennlp.data.token_indexers import SingleIdTokenIndexer, PretrainedTransformerIndexer
 from overrides import overrides
 from transformers import AutoTokenizer
 
@@ -40,18 +40,27 @@ class ValidatingDataReader(DatasetReader):
         :param lazy:
         """
         super().__init__(False)
-        self._token_indexers = {"tokens": SingleIdTokenIndexer()}
+        if pretrained_model_pth is None:
+            self._token_indexers ={"tokens": SingleIdTokenIndexer()}
+        else:
+            self._token_indexers ={"tokens": PretrainedTransformerIndexer(pretrained_model_pth)}
 
-        self.pretrained_tokenizer = None
+
         if pretrained_model_pth is not None:
             self.pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_pth)
-
+        else:
+            self.pretrained_tokenizer = None
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
         file_path = cached_path(file_path) # 确保文件路径存在
         with open(file_path) as f:
             for line in f.readlines():
-                data = json.loads(line)
+                try:
+                    data = json.loads(line)
+                except json.decoder.JSONDecodeError as e:
+                    logger.error(e)
+                    logger.error(line)
+                    continue
                 text = data['text']
                 spo_list = data['spo_list']
                 yield self.text_to_instance(text, spo_list)

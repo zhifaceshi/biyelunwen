@@ -3,6 +3,7 @@
 @Author  : 梁家熙
 @Email:  :11849322@mail.sustech.edu.cn
 """
+
 import json
 from tqdm import tqdm
 import random
@@ -11,15 +12,24 @@ import os
 import collections
 from typing import List, Dict, Tuple
 import logging
-
+import fire
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 import sys
+from pathlib import Path
 from allennlp.commands import main
-print(os.getcwd())
-command = "allennlp train ./configs/debug2.json -s ./output/debug -f --include-package my_library"
-sys.argv = command.split()
 
-if __name__ == '__main__':
+override_dict = {"train_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt","validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_dev.txt","test_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_test.txt"}
+override_dict = str(override_dict).replace(' ', "")
+def run(exp_name, config_file, ):
+    print(os.getcwd())
+    command = f"allennlp train ./configs/{exp_name}/{config_file}.json -s ./output/{exp_name}/{config_file.split('.')[0]}  -f  -o {override_dict}    --include-package my_library"
     print(sys.argv)
+    print(command)
+    sys.argv = command.split()
+
     main()
+if __name__ == '__main__':
+    exp_name = "exp1"
+    config_file = 'w_lstm_2_fcn_1_300'
+    run(exp_name, config_file)

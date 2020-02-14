@@ -6,9 +6,9 @@
   "validation_dataset_reader": {
     "type": "valid"
   },
-  "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt",
-  "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_dev.txt",
-  "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_test.txt",
+  "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_train.txt",
+  "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_dev.txt",
+  "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
   "evaluate_on_test": true,
   "model": {
     "type": "twostagemodel",
@@ -20,7 +20,8 @@
         "token_embedders": {
           "tokens": {
             "type": "embedding",
-            "embedding_dim": 768,
+            "pretrained_file": "/home/liangjiaxi/TMP_PROJECT/shuoshibiyesheji/data/original_data/token_vec_300.bin",
+            "embedding_dim": 300,
             "trainable": true
           }
         }
@@ -30,14 +31,14 @@
         "type": "lstm",
         "num_layers": 2,
         "bidirectional": true,
-        "input_size": 768,
-        "hidden_size": 384
+        "input_size": 300,
+        "hidden_size": 150
       }
     },
     "one_decoder": {
       "type": "feedforward",
       "feedforward": {
-        "input_dim": 768,
+        "input_dim": 300,
         "num_layers": 1,
         "hidden_dims": 1,
         "activations": "linear"
@@ -46,7 +47,7 @@
     "many_decoder": {
       "type": "feedforward",
       "feedforward": {
-        "input_dim": 768,
+        "input_dim": 300,
         "num_layers": 1,
         "hidden_dims": 49,
         "activations": "linear"
@@ -54,7 +55,7 @@
     },
     "span_extractor": {
       "type": "endpoint",
-      "input_dim": 768,
+      "input_dim": 300,
       "combination": "x+y"
     },
     "mode": "s2po"
@@ -66,10 +67,12 @@
   },
   "validation_iterator": {
     "type": "basic",
-    "batch_size": 128
+    "batch_size": 512
   },
   "distributed": {
-    "cuda_devices": [0, 1]
+    "cuda_devices": [0, 1],
+    "master_address": "127.0.0.1",
+    "master_port": 29502
   },
   "trainer": {
     "optimizer": {
