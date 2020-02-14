@@ -10,6 +10,7 @@ import logging
 import collections
 from pathlib import Path
 
+from allennlp.data import Token
 from allennlp.nn.util import get_range_vector, get_device_of, flatten_and_batch_shift_indices
 from tqdm import tqdm
 from pprint import pprint
@@ -275,6 +276,17 @@ def get_span_list(array1, array2, yuzhi):
             j = j[0]
             ans.append([i.item(), j.item()])
     return ans
+
+def get_word_from_pretrained(pretrained_tokenizer, text):
+    UNK = defaults.unknown[pretrained_tokenizer.__class__.__name__]
+    tokens = []
+    for t in text:
+        idx = pretrained_tokenizer.vocab.get(t, None)
+        if idx is None:
+            logger.info(f" {t} 不在词表中，过多情况请检查!")
+        idx = UNK
+        tokens.append(Token(text=t, text_id=idx))
+    return tokens
 
 
 if __name__ == '__main__':

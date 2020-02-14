@@ -61,7 +61,7 @@ class ValidatingDataReader(DatasetReader):
                     logger.error(e)
                     logger.error(line)
                     continue
-                text = data['text']
+                text = data['text'].replace(' ', "")
                 spo_list = data['spo_list']
                 yield self.text_to_instance(text, spo_list)
 

@@ -30,6 +30,6 @@ def run(exp_name, config_file, ):
 
     main()
 if __name__ == '__main__':
-    exp_name = "exp1"
-    config_file = 'w_lstm_2_fcn_1_300'
+    exp_name = "debug"
+    config_file = 'debug2'
     run(exp_name, config_file)

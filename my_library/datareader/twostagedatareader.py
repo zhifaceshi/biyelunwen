@@ -65,7 +65,7 @@ class TwoStageDataReader(DatasetReader):
         with open(file_path) as f:
             for line in f.readlines():
                 data = json.loads(line)
-                text = data['text']
+                text = data['text'].replace(" ", "")
                 spo_list = data['spo_list']
                 if self.mode == 's2po':
                     root_leaves: Dict[str: List[Tuple[int, str]]] = build_subject_and_leaves(spo_list)
@@ -93,11 +93,7 @@ class TwoStageDataReader(DatasetReader):
         "训练的时候，输入这些用于训练我们的模型。至于验证时，则应重新写一个验证数据读取类"
         length = len(text)
         if self.pretrained_tokenizer is not None:
-            UNK = defaults.unknown[self.pretrained_tokenizer.__class__.__name__]
-            def f(w):
-                logger.info(f"这个字没有找到:{w}，如果次数太多请检查")
-                return UNK
-            tokens = [Token(text=w, text_id=self.pretrained_tokenizer.vocab.get(w, f(w))) for w in text]
+            tokens = get_word_from_pretrained(self.pretrained_tokenizer, text)
         else:
             tokens = [Token(w) for w in text]
         text_field = TextField(tokens, self._token_indexers)

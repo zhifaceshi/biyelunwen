@@ -69,7 +69,9 @@
     "batch_size": 128
   },
   "distributed": {
-    "cuda_devices": [0, 1]
+    "cuda_devices": [0, 1],
+    "master_address": "127.0.0.1",
+    "master_port": 29504
   },
   "trainer": {
     "optimizer": {
@@ -83,8 +85,8 @@
       "num_steps_per_epoch": 8829
     },
     "validation_metric": "+f1",
-    "num_epochs": 50,
+    "num_epochs": 200,
     //        "grad_norm": 10.0,
-    "patience": null
+    "patience": 50
   }
 }

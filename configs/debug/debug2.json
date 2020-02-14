@@ -1,12 +1,12 @@
 {
   "dataset_reader": {
     "type": "two_stage",
-    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/",
+    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/distillbert/",
     "mode": "s2po"
   },
   "validation_dataset_reader": {
     "type": "valid",
-    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/"
+    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/distillbert/"
   },
   "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_train.txt",
   "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_dev.txt",
@@ -22,7 +22,7 @@
         "token_embedders": {
           "tokens": {
             "type": "pretrained_transformer",
-            "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/"
+            "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/distillbert/"
           }
         }
 
@@ -63,7 +63,9 @@
     "batch_size": 128
   },
   "distributed": {
-    "cuda_devices": [0, 1]
+    "cuda_devices": [0, 1],
+    "master_address": "127.0.0.1",
+    "master_port": 30000
   },
   "trainer": {
     "optimizer": {
