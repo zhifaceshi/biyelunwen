@@ -98,7 +98,6 @@ class TwoStageDataReader(DatasetReader):
             tokens = [Token(w) for w in text]
         text_field = TextField(tokens, self._token_indexers)
 
-
         span = SpanField(one_position[0], one_position[1], text_field)
         dtype:numpy.dtype = np.dtype(numpy.float32)
         one_s = ArrayField(one_array[0], dtype=dtype)

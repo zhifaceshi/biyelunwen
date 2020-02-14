@@ -53,23 +53,9 @@ Q:各个loss的权重是否可以调？
 预训练模型有哪些？  
 
 Q: BERT的未登录词怎么办？
-> 使用词表替换。get_word_from_pretrained函数实现这个功能
+> 使用词表替换。cibiao_sub.py实现这个功能
 
 ```
-020-02-14 18:08:31,278 - my_library.myutils - INFO - 瘿 不在词表，但是可以修改[unused2]->2 变成瘿->2 9711
-2020-02-14 18:08:31,300 - my_library.myutils - INFO - — 不在词表，但是可以修改[unused3]->3 变成—->3 9710
-2020-02-14 18:08:31,301 - my_library.myutils - INFO - S 不在词表，但是可以修改[unused4]->4 变成S->4 9709
-2020-02-14 18:08:31,301 - my_library.myutils - INFO - M 不在词表，但是可以修改[unused5]->5 变成M->5 9708
-2020-02-14 18:08:31,301 - my_library.myutils - INFO - C 不在词表，但是可以修改[unused6]->6 变成C->6 9707
-2020-02-14 18:08:31,305 - my_library.myutils - INFO - 蝽 不在词表，但是可以修改[unused7]->7 变成蝽->7 9706
-2020-02-14 18:08:31,317 - my_library.myutils - INFO - “ 不在词表，但是可以修改[unused8]->8 变成“->8 9705
-2020-02-14 18:08:31,317 - my_library.myutils - INFO - ” 不在词表，但是可以修改[unused9]->9 变成”->9 9704
-2020-02-14 18:08:31,319 - my_library.myutils - INFO - K 不在词表，但是可以修改[unused10]->10 变成K->10 9703
-2020-02-14 18:08:31,322 - my_library.myutils - INFO - 鵙 不在词表，但是可以修改[unused11]->11 变成鵙->11 9702
-2020-02-14 18:08:31,343 - my_library.myutils - INFO - 　 不在词表，但是可以修改[unused12]->12 变成　->12 9701
-2020-02-14 18:08:31,350 - my_library.myutils - INFO - B 不在词表，但是可以修改[unused13]->13 变成B->13 9700
-2020-02-14 18:08:31,353 - my_library.myutils - INFO - 瓘 不在词表，但是可以修改[unused14]->14 变成瓘->14 9699
-
 distillbert中文是繁体的？
 vocab.get('眼', '？？')
    Out[8]: '？？'

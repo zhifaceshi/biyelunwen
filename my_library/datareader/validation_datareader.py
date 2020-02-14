@@ -43,6 +43,7 @@ class ValidatingDataReader(DatasetReader):
         if pretrained_model_pth is None:
             self._token_indexers ={"tokens": SingleIdTokenIndexer()}
         else:
+            # 注意，这里要进行替换，因为你的词表已经变了。
             self._token_indexers ={"tokens": PretrainedTransformerIndexer(pretrained_model_pth)}
 
 
