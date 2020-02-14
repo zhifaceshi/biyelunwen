@@ -10,9 +10,10 @@ import logging
 import collections
 from pathlib import Path
 
+from allennlp.nn.util import get_range_vector, get_device_of, flatten_and_batch_shift_indices
 from tqdm import tqdm
 from pprint import pprint
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import re
 import doctest
 import torch
@@ -95,7 +96,29 @@ def build_object_and_leaves(spo_list: List[Dict])->Dict[str, List[Tuple[int, str
         o2p_s[object].append((relation2id[predicate], subject))
     return dict(o2p_s)
 
-#
+def build_three_layer_tree(spo_list: List[Dict], mode):
+    """
+    >>> spo_list = [{"predicate": "作词", "object_type": "人物", "subject_type": "歌曲", "object": "施立", "subject": "关键时刻"}, {"predicate": "所属专辑", "object_type": "音乐专辑", "subject_type": "歌曲", "object": "也许明天", "subject": "关键时刻"}, {"predicate": "歌手", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}, {"predicate": "作曲", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}]
+    >>> build_three_layer_tree(spo_list, 's')
+    defaultdict(<function build_three_layer_tree.<locals>.<lambda> at 0x7f3627733400>, {'关键时刻': defaultdict(<class 'list'>, {'施立': [20], '也许明天': [27], '张惠妹': [7, 21]})})
+
+    >>> spo_list = [{"predicate": "作词", "object_type": "人物", "subject_type": "歌曲", "object": "施立", "subject": "关键时刻"}, {"predicate": "所属专辑", "object_type": "音乐专辑", "subject_type": "歌曲", "object": "也许明天", "subject": "关键时刻"}, {"predicate": "歌手", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}, {"predicate": "作曲", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}]
+    >>> build_three_layer_tree(spo_list, 'o')
+     defaultdict(<function build_three_layer_tree.<locals>.<lambda> at 0x7f0a861de598>, {'施立': defaultdict(<class 'list'>, {'关键时刻': [20]}), '也许明天': defaultdict(<class 'list'>, {'关键时刻': [27]}), '张惠妹': defaultdict(<class 'list'>, {'关键时刻': [7, 21]})})
+    """
+    ret = collections.defaultdict(lambda : collections.defaultdict(list))
+    for dct in spo_list:
+        subject = dct['subject']
+        object = dct['object']
+        predicate = dct['predicate']
+        if mode == 's':
+            ret[subject][object].append(relation2id[predicate])
+        elif mode == 'o':
+            ret[object][subject].append(relation2id[predicate])
+        else:
+            raise Exception
+    return ret
+
 # def get_one_array(text:str, leaf:str)->Tuple[np.array, np.array]:
 #     """
 #     得到一个向量
@@ -256,4 +279,4 @@ def get_span_list(array1, array2, yuzhi):
 
 if __name__ == '__main__':
     # doctest.testmod(name= 'build_object_and_leaves')
-    doctest.testmod(name = get_span_list.__name__)
+    doctest.testmod(name = build_three_layer_tree.__name__)

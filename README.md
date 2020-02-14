@@ -19,6 +19,8 @@ Q: pretrained的词表如何映射到？
 > PretrainedTransformerIndexer类的  
 >_add_encoding_to_vocabulary_if_needed方法自动给词表进行添加了
 
+Q:数据输入时是否需要打乱，生成负样本？
+> 可以尝试，但是要看时间来不来的及。比如1：1的采样等等，这里要在datareader里添加比较复杂的逻辑
 
 ---
 ##模型部分
@@ -42,6 +44,8 @@ Q:如何将这个向量和embedding结合
 > 重复后相加，重复后线性变换再相加，重复后取平均  
 > 相加相当于是权重为1， 变换相当于是全连接， mix 相当于是只有两个参数
 
+Q:各个loss的权重是否可以调？
+> 我这里就很简单的，不去调整， 简单相加好了
 
 中文字向量选择了 https://github.com/liuhuanyong/ChineseEmbedding  
 路径在 /storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/ChineseEmbedding/model/token_vec_300.bin
