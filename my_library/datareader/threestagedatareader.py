@@ -103,7 +103,10 @@ class ThreeStageDataReader(DatasetReader):
         "训练的时候，输入这些用于训练我们的模型。至于验证时，则应重新写一个验证数据读取类"
         if self.pretrained_tokenizer is not None:
             UNK = defaults.unknown[self.pretrained_tokenizer.__class__.__name__]
-            tokens = [Token(text=w, text_id=self.pretrained_tokenizer.vocab.get(w, UNK)) for w in text]
+            def f(w):
+                logger.info(f"这个字没有找到:{w}，如果次数太多请检查")
+                return UNK
+            tokens = [Token(text=w, text_id=self.pretrained_tokenizer.vocab.get(w, f(w))) for w in text]
         else:
             tokens = [Token(w) for w in text]
         text_field = TextField(tokens, self._token_indexers)
