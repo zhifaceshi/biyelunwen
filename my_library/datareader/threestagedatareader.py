@@ -31,7 +31,7 @@ class ThreeStageDataReader(DatasetReader):
     def __init__(self,
                  pretrained_model_pth: str =None,
                  lazy: bool = False,
-                 mode: str = 's2po'
+                 mode: str = 'sop'
                  ):
         """
         三阶段数据读取模型
@@ -85,20 +85,25 @@ class ThreeStageDataReader(DatasetReader):
                         two_position = search(text, v)[0]
                         if two_position == (-1, -1):
                             continue
+                        # 可能存在一对实体存在多个关系
+                        relationship_array = [0 for _ in range(len(defaults.id2relation))]
+                        for i in relation2id:
+                            relationship_array[i] = 1
+                        relationship_array = numpy.array(relationship_array)
                         yield self.text_to_instance(
                             text,
                             one_array,
                             two_array,
                             one_position,
                             two_position,
-                            relation2id
+                            relationship_array
                         )
 
     def text_to_instance(self, text: str, one_array:Tuple[np.array, np.array]=None,
                          two_array:Tuple[np.array, np.array]=None,
                          one_position: Tuple[int, int]=None,
                          two_position: Tuple[int, int]=None,
-                         relation2id: int = None,
+                         relation2id: np.array = None,
                          ) -> Instance:
         "训练的时候，输入这些用于训练我们的模型。至于验证时，则应重新写一个验证数据读取类"
         if self.pretrained_tokenizer is not None:
@@ -115,7 +120,7 @@ class ThreeStageDataReader(DatasetReader):
         one_e = ArrayField(one_array[1], dtype=dtype)
         two_s = ArrayField(two_array[0], dtype=dtype)
         two_e = ArrayField(two_array[1], dtype=dtype)
-        relation2id = LabelField(relation2id, skip_indexing=True)
+        relation2id = ArrayField(relation2id, dtype=dtype)
         fields = {
             "tokens": text_field,
             "one_span": one_span,

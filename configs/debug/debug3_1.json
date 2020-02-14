@@ -1,19 +1,17 @@
 {
   "dataset_reader": {
-    "type": "two_stage",
-    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/",
-    "mode": "s2po"
+    "type": "three_stage",
+    "mode": "sop"
   },
   "validation_dataset_reader": {
-    "type": "valid",
-    "pretrained_model_pth": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/"
+    "type": "valid"
   },
   "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_train.txt",
   "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_dev.txt",
   "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
   "evaluate_on_test": true,
   "model": {
-    "type": "twostagemodel",
+    "type": "threetagemodel",
     "encoder": {
       "type": "encoder",
       "text_field_embedder": {
@@ -21,21 +19,22 @@
 
         "token_embedders": {
           "tokens": {
-              "type": "pretrained_transformer",
-              "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/"
+            "type": "embedding",
+            "embedding_dim": 768,
+            "trainable": true
           }
         }
 
       },
-//      "encoder": {
-//        "type": "lstm",
-//        "num_layers": 2,
-//        "bidirectional": true,
-//        "input_size": 768,
-//        "hidden_size": 384
-//      }
+      "encoder": {
+        "type": "lstm",
+        "num_layers": 2,
+        "bidirectional": true,
+        "input_size": 768,
+        "hidden_size": 384
+      }
     },
-    "one_decoder": {
+    "first_decoder": {
       "type": "feedforward",
       "feedforward": {
         "input_dim": 768,
@@ -44,38 +43,50 @@
         "activations": "linear"
       }
     },
-    "many_decoder": {
+    "second_decoder": {
       "type": "feedforward",
       "feedforward": {
         "input_dim": 768,
         "num_layers": 1,
-        "hidden_dims": 49,
+        "hidden_dims": 1,
         "activations": "linear"
       }
+    },
+    "third_decoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 49,
+      "num_layers":  1,
+      "bias":  true,
+      "dropout":  0.0,
+      "bidirectional": false
+
     },
     "span_extractor": {
       "type": "endpoint",
       "input_dim": 768,
       "combination": "x+y"
     },
-    "mode": "s2po"
+    "mode": "sop"
   },
   "iterator": {
     "type": "bucket",
-    "sorting_keys": [["tokens", "tokens___token_ids"]],
-    "batch_size": 8
+    "sorting_keys": [["tokens", "tokens___tokens"]],
+    "batch_size": 128
   },
   "validation_iterator": {
     "type": "basic",
     "batch_size": 128
   },
   "distributed": {
-    "cuda_devices": [0, 1]
+    "cuda_devices": [0, 1],
+    "master_address": "127.0.0.1",
+    "master_port": 29506
   },
   "trainer": {
     "optimizer": {
       "type": "adam",
-      "lr": 5e-5
+      "lr": 5e-4
 
     },
     "learning_rate_scheduler": {
@@ -84,8 +95,8 @@
       "num_steps_per_epoch": 8829
     },
     "validation_metric": "+f1",
-    "num_epochs": 25,
-
-    "patience": null
+    "num_epochs": 200,
+    //        "grad_norm": 10.0,
+    "patience": 50
   }
 }
