@@ -24,3 +24,15 @@ yuzhi = 0.5
 unknown = {
     "BertTokenizer": 100
 }
+def read():
+    "将这些特殊符号也进行替换，因为我是按照字为单位进行输入"
+    ret = []
+    with open('/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/vocab.txt') as f:
+        for line in f.readlines():
+            line = line.strip()
+            if len(line) != 1 and line.startswith('##'):
+                ret.append(line.strip())
+    return ret
+tihuan = {
+    "BertTokenizer": [f"[unused{i}]" for i in range(1, 100)] + read()
+}

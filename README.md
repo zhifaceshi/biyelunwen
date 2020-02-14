@@ -52,29 +52,24 @@ Q:各个loss的权重是否可以调？
 
 预训练模型有哪些？  
 
-|  模型名   | 是否支持中文？  |
-|  ----  | ----  |
-| bert-base-chinese  | 是 |
-| albert-base-v2  | 是 |
-| distilbert-base-uncased  | 是 |
-| gpt2  | 否 |
-| roberta-base  |  |
-
-
-# 实验记录
-## 实验一
-### 二阶段模型
-#### 不同神经网络的表现
-普通的模型要训练200epochs，patience设置为50。为了训练更为充分  
-预训练语言模型则设置为25epochs，无patience
-
-| 模型名称| 验证集| 测试集 |
-| ----| ----| ---- |
-|r lstm 2| 35.2 | .9 
-|w_lstm_2| 60.9| 28.5
-
+Q: BERT的未登录词怎么办？
+> 使用词表替换。get_word_from_pretrained函数实现这个功能
 
 ```
+020-02-14 18:08:31,278 - my_library.myutils - INFO - 瘿 不在词表，但是可以修改[unused2]->2 变成瘿->2 9711
+2020-02-14 18:08:31,300 - my_library.myutils - INFO - — 不在词表，但是可以修改[unused3]->3 变成—->3 9710
+2020-02-14 18:08:31,301 - my_library.myutils - INFO - S 不在词表，但是可以修改[unused4]->4 变成S->4 9709
+2020-02-14 18:08:31,301 - my_library.myutils - INFO - M 不在词表，但是可以修改[unused5]->5 变成M->5 9708
+2020-02-14 18:08:31,301 - my_library.myutils - INFO - C 不在词表，但是可以修改[unused6]->6 变成C->6 9707
+2020-02-14 18:08:31,305 - my_library.myutils - INFO - 蝽 不在词表，但是可以修改[unused7]->7 变成蝽->7 9706
+2020-02-14 18:08:31,317 - my_library.myutils - INFO - “ 不在词表，但是可以修改[unused8]->8 变成“->8 9705
+2020-02-14 18:08:31,317 - my_library.myutils - INFO - ” 不在词表，但是可以修改[unused9]->9 变成”->9 9704
+2020-02-14 18:08:31,319 - my_library.myutils - INFO - K 不在词表，但是可以修改[unused10]->10 变成K->10 9703
+2020-02-14 18:08:31,322 - my_library.myutils - INFO - 鵙 不在词表，但是可以修改[unused11]->11 变成鵙->11 9702
+2020-02-14 18:08:31,343 - my_library.myutils - INFO - 　 不在词表，但是可以修改[unused12]->12 变成　->12 9701
+2020-02-14 18:08:31,350 - my_library.myutils - INFO - B 不在词表，但是可以修改[unused13]->13 变成B->13 9700
+2020-02-14 18:08:31,353 - my_library.myutils - INFO - 瓘 不在词表，但是可以修改[unused14]->14 变成瓘->14 9699
+
 distillbert中文是繁体的？
 vocab.get('眼', '？？')
    Out[8]: '？？'
@@ -89,9 +84,19 @@ vocab.get('眼', '？？')
    vocab.keys()
    Out[13]: odict_keys(['[PAD]', '[
 
-```
-
-```
 roberta 
 {"<s>": 0, "<pad>": 1, "</s>": 2, "<unk>": 3, ".": 4, "Ġthe": 5, ",": 6, "Ġto": 7, "Ġand": 8, "Ġof": 9, "Ġa": 10, "Ġin": 11, "-": 12, "Ġfor": 13, "Ġthat": 14, "Ġon": 15, "Ġis": 16, "âĢ": 17, "'s": 18, "Ġwith": 19, "ĠThe": 20, "Ġwas": 21, "Ġ\"": 22, "Ġat": 23, "Ġit": 24, "Ġas": 25, "Ġsaid": 26, "Ļ": 27, "Ġbe": 28, "s": 29, "Ġby": 30, "Ġfrom": 31, "Ġare": 32, "Ġhave": 33, "Ġhas": 34, ":": 35, "Ġ(": 36, "Ġhe": 37, "ĠI": 38, "Ġhis": 39, "Ġwill": 40, "Ġan": 41, "Ġthis": 42, ")": 43, "ĠâĢ": 44, "Ġnot": 45, "Ŀ": 46, "Ġyou": 47, "ľ": 48, "Ġtheir": 49, "Ġor": 50, "Ġthey": 51, "Ġwe": 52, "Ġbut": 53, "Ġwho": 54, "Ġmore": 55, "Ġhad": 56, "Ġbeen": 57, "Ġwere": 58, "Ġabout": 59, ",\"": 60, "Ġwhich": 61, "Ġup": 62, "Ġits": 63, "Ġcan": 64, "Ġone": 65, "Ġout": 66, "Ġalso": 67, "Ġ$": 68, "Ġher": 69, "Ġall": 70, "Ġafter": 71, ".\"": 72, "/": 73, "Ġwould": 74, "'t": 75, "Ġyear": 76, "Ġwhen": 77, "Ġfirst": 78,"Ġshe": 79, "Ġtwo": 80, "Ġover": 81, "Ġpeople": 82, "ĠA": 83, "Ġou
 ```
+
+
+# 实验记录
+## 实验一
+### 二阶段模型
+#### 不同神经网络的表现
+普通的模型要训练200epochs，patience设置为50。为了训练更为充分  
+预训练语言模型则设置为25epochs，无patience
+
+| 模型名称| 验证集| 测试集 |
+| ----| ----| ---- |
+|r lstm 2| 35.2 | .9 
+|w_lstm_2| 60.9| 28.5

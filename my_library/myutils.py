@@ -283,8 +283,19 @@ def get_word_from_pretrained(pretrained_tokenizer, text):
     for t in text:
         idx = pretrained_tokenizer.vocab.get(t, None)
         if idx is None:
-            logger.info(f" {t} 不在词表中，过多情况请检查!")
-        idx = UNK
+            lst = defaults.tihuan[pretrained_tokenizer.__class__.__name__]
+
+            if len(lst) != 0:
+                #将未登录词进行词表替换
+                key = lst.pop(0)
+                t_id = pretrained_tokenizer.vocab.get(key)
+                del pretrained_tokenizer.vocab[key]
+                pretrained_tokenizer.vocab[t] = t_id
+                idx = t_id
+                logger.info(f"{t} 不在词表，但是可以修改{key}->{t_id} 变成{t}->{t_id} 剩余{len(lst)}")
+            else:
+                logger.info(f"{t} 不在词表中，过多情况请检查！！！！！！！！！！")
+                idx = UNK
         tokens.append(Token(text=t, text_id=idx))
     return tokens
 
