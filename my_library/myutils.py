@@ -125,7 +125,7 @@ def build_p_so(spo_list: List[Dict]):
     一阶段模型需要每个 关系 到词对的映射
     >>> spo_list = [{"predicate": "作词", "object_type": "人物", "subject_type": "歌曲", "object": "施立", "subject": "关键时刻"}, {"predicate": "所属专辑", "object_type": "音乐专辑", "subject_type": "歌曲", "object": "也许明天", "subject": "关键时刻"}, {"predicate": "歌手", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}, {"predicate": "作曲", "object_type": "人物", "subject_type": "歌曲", "object": "张惠妹", "subject": "关键时刻"}]
     >>> build_p_so(spo_list)
-    {20: [('关键时刻', '施立')], 27: [('关键时刻', '也许明天')], 7: [('关键时刻', '张惠妹')], 21: [('关键时刻', '张惠妹')]}
+    ({20: [('关键时刻', '施立')], 27: [('关键时刻', '也许明天')], 7: [('关键时刻', '张惠妹')], 21: [('关键时刻', '张惠妹')]}, {'也许明天', '关键时刻', '张惠妹', '施立'})
     """
     ret = collections.defaultdict(list)
     words = set()
@@ -308,14 +308,53 @@ def get_word_from_pretrained(pretrained_tokenizer, text):
         tokens.append(Token(text=t, text_id=idx))
     return tokens
 
-#TODO
+
+def find_nearst_point(s_point, end_points):
+    """
+    寻找最近的点
+    >>> find_nearst_point((0,0), [(0,1), (1,0), (1,1)])
+    (0, 1)
+    >>> find_nearst_point((2,2), [(0,1), (1,0), (1,1)])
+    (None, None)
+    >>> find_nearst_point((1,1), [(0, 0), (0,1), (1,0), (2,2)])
+    (2, 2)
+    """
+    x, y = s_point
+    mindis = 1e20
+    ret_i = None
+    ret_j = None
+    for (i, j) in end_points:
+        if i >= x and j >= y:
+            dis = abs(x-i) + abs(y-j)
+            if dis < mindis:
+                mindis = dis
+                ret_i = i
+                ret_j = j
+    return ret_i, ret_j
+
+
 def matrix_decode(m_s:torch.Tensor, m_e: torch.Tensor, length):
+    """
+    [[(1,1), (2,2)], ...]
+    :param m_s:
+    :param m_e:
+    :param length:
+    :return:
+    """
     if torch.is_tensor(length):
         length = length.item()
     start_tuple = torch.where(m_s > defaults.yuzhi)
-    end_
+    end_tuple = torch.where(m_e > defaults.yuzhi)
+    start_points = [(x.item(), y.item()) for x, y in zip(start_tuple[0], start_tuple[1])]
+    end_points = [(x.item(), y.item()) for x, y in zip(end_tuple[0], end_tuple[1])]
+    ret = []
+    for s_point in start_points:
+        e_point = find_nearst_point(s_point, end_points)
+        if e_point[0] is not None:
+            ret.append([s_point, e_point])
+    return ret
 
 
 if __name__ == '__main__':
     # doctest.testmod(name= 'build_object_and_leaves')
-    doctest.testmod(name = build_p_so.__name__)
+    doctest.testmod(name = find_nearst_point.__name__)

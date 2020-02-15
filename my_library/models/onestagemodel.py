@@ -42,7 +42,7 @@ class OneStageModel(MyModel):
         self.decoder_start_list = clone(attention_decoder, len(defaults.relation2id))
         self.decoder_end_list = clone(attention_decoder, len(defaults.relation2id))
         self.valid_metric = SanyuanzuMetric()
-    def forward(self, tokens, target_start, target_end, metadata):
+    def forward(self, tokens, target_start = None, target_end = None, metadata = None):
 
         output = {}
 
@@ -55,8 +55,8 @@ class OneStageModel(MyModel):
         batchsize, seq_len, dim_size = encoded_info.shape
         # 这里将padding的部分设置为0，方便计算
         encoded_info[mask == 0] = 0
-        decoded_start_list = torch.stack([decoder(encoded_info) for decoder in self.decoder_start_list], dim=-1)
-        decoded_end_list = torch.stack([decoder(encoded_info) for decoder in self.decoder_end_list], dim=-1)
+        decoded_start_list = torch.stack([decoder(encoded_info, encoded_info) for decoder in self.decoder_start_list], dim=-1)
+        decoded_end_list = torch.stack([decoder(encoded_info, encoded_info) for decoder in self.decoder_end_list], dim=-1)
         assert decoded_start_list.shape == decoded_end_list.shape == (batchsize, seq_len, seq_len, len(defaults.relation2id))
         if self.training:
             output['loss'] = binary_cross_entropy_with_logits(decoded_start_list, target_start) + binary_cross_entropy_with_logits(decoded_end_list, target_end)
@@ -66,14 +66,18 @@ class OneStageModel(MyModel):
             output = collections.defaultdict(list)
             assert mask.shape == (batchsize, seq_len)
             mask_length = get_lengths_from_binary_sequence_mask(mask)
-            for decoded_start, decoded_end, length, m_data in zip(decoded_start_list, decoded_end_list, mask_length, metadata['text']):
+            for decoded_start, decoded_end, length, m_data in zip(decoded_start_list, decoded_end_list, mask_length, metadata):
                 pred_spo_list = []
                 text = m_data['text']
                 spo_list = m_data['spo_list']
-                for i, m1, m2 in zip(decoded_start.split(-1), decoded_end.split(-1)):
+                # 针对49种关系而言
+                # shape: [relationship, seq_len, seq_len]
+                decoded_start = decoded_start.permute(2, 0, 1).contiguous()
+                decoded_end = decoded_end.permute(2, 0, 1).contiguous()
+                assert decoded_start.shape == (len(defaults.relation2id), seq_len, seq_len)
+                for i, (m1, m2) in enumerate(zip(decoded_start, decoded_end)):
                     predicate = defaults.id2relation[i]
                     s_o_spans = matrix_decode(m1, m2, length.item())
-
                     for s_span, o_span in s_o_spans:
                         s = text[s_span[0]: s_span[1] + 1]
                         o = text[o_span[0]: o_span[1] + 1]

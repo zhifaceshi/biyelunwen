@@ -66,18 +66,19 @@ class OneStageDataReader(DatasetReader):
                 spo_list = data['spo_list']
                 root_leaves, words = build_p_so(spo_list)
                 # shape: [seq_len, seq_len, relationship]
-                target_matrix_start = numpy.array((len(text), len(text), len(relation2id)))
-                target_matrix_end = numpy.array((len(text), len(text), len(relation2id)))
+                target_matrix_start = torch.zeros((len(text), len(text), len(relation2id))).cpu().numpy()
+                target_matrix_end = torch.zeros((len(text), len(text), len(relation2id))).cpu().numpy()
                 position = {}
                 for word in words:
                     position[word] = search(text, word)[0]
-                for r_id, (s, o) in root_leaves.items():
-                    s_span = position[s]
-                    o_span = position[o]
-                    x_1, y_1 = s_span[0], o_span[0]
-                    x_2, y_2 = s_span[1], o_span[1]
-                    target_matrix_start[x_1, y_1, r_id] = 1
-                    target_matrix_end[x_2, y_2, r_id] = 1
+                for r_id, lst in root_leaves.items():
+                    for s, o in lst:
+                        s_span = position[s]
+                        o_span = position[o]
+                        x_1, y_1 = s_span[0], o_span[0]
+                        x_2, y_2 = s_span[1], o_span[1]
+                        target_matrix_start[x_1, y_1, r_id] = 1
+                        target_matrix_end[x_2, y_2, r_id] = 1
 
                 yield self.text_to_instance(text, target_matrix_start, target_matrix_end)
 

@@ -31,7 +31,7 @@ from my_library.myutils import get_span_list
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-@Model.register('threetagemodel')
+@Model.register('threestagemodel')
 class ThreeStageModel(MyModel):
     def __init__(self, vocab: Vocabulary,
                  encoder: Seq2SeqEncoder,

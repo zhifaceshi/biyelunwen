@@ -1,7 +1,6 @@
 {
   "dataset_reader": {
-    "type": "three_stage",
-    "mode": "sop"
+    "type": "one_stage"
   },
   "validation_dataset_reader": {
     "type": "valid"
@@ -11,7 +10,7 @@
   "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
   "evaluate_on_test": true,
   "model": {
-    "type": "threestagemodel",
+    "type": "onestagemodel",
     "encoder": {
       "type": "encoder",
       "text_field_embedder": {
@@ -34,55 +33,24 @@
         "hidden_size": 384
       }
     },
-    "first_decoder": {
-      "type": "feedforward",
-      "feedforward": {
-        "input_dim": 768,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear"
-      }
-    },
-    "second_decoder": {
-      "type": "feedforward",
-      "feedforward": {
-        "input_dim": 768,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear"
-      }
-    },
-    "third_decoder": {
-      "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 49,
-      "num_layers":  1,
-      "bias":  true,
-      "dropout":  0.0,
-      "bidirectional": false
-
-    },
-    "span_extractor": {
-      "type": "endpoint",
-      "input_dim": 768,
-      "combination": "x+y"
-    },
-    "mode": "sop"
+    "attention_decoder": {
+      "type": "dot_product"
+    }
   },
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["tokens", "tokens___tokens"]],
-    "batch_size": 128
+    "batch_size": 32
   },
   "validation_iterator": {
     "type": "basic",
-    "batch_size": 128
+    "batch_size": 32
   },
   "distributed": {
-    "cuda_devices": [0, 1],
-    "master_address": "127.0.0.1",
-    "master_port": 29506
-  },
+  "cuda_devices": [0, 1],
+  "master_address": "127.0.0.1",
+  "master_port": 29508
+},
   "trainer": {
     "optimizer": {
       "type": "adam",
@@ -95,8 +63,8 @@
       "num_steps_per_epoch": 8829
     },
     "validation_metric": "+f1",
-    "num_epochs": 200,
+    "num_epochs": 100,
     //        "grad_norm": 10.0,
-    "patience": 50
+    "patience": 25
   }
 }
