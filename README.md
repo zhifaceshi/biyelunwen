@@ -60,6 +60,50 @@ Q: BERT的未登录词怎么办？
 Q: 事实上所有的模型都会有一个问题。即匹配的问题
 > 每个阶段的模型都有自己的匹配方法，一般是指最近匹配
 
+---
+# 预期贡献
++ 关系抽取思路的较为完整的理论分析，从理论上分析了传统 `命名实体识别 + 关系分类` 思路的不足。
++ 横向对比了三个大框架（一阶段模型、二阶段模型、三阶段模型）的优缺点，实际手动实现，并记录了可能存在的问题。
++ 针对一阶段模型，提出自己（原创？存疑，目前无法google，回校搜索尝试）的 encoder + matrix attention模型.  
+    + 解码端的尝试如下：
+        + 线性attention （W*[E1 opt E2]） 这里的opt可以包含 + - * / concat 等操作。
+        + 参考`esim` 模型 [E1; E2; E1-E2; E1*E2] 组合，查看是否会有效果提升
+        + 双线性attention （E1 * W * E2）
+    + 编码端的尝试不是重点
+        + Bi-LSTM 2层 （作为基准）
+        + BERT模型 6层 在找到合适的解码端之后，尝试与此结合会不会有效果上的提升
+    + 预期结论： 
+        + 信息抽取领域 xxxx 解码 效果最好
+        + BERT模型 + 此解码 相比 效果有提升
+    
+    
++ 针对二阶段模型，涉及`encoder + span extractor + decoder` 三个模块
+    + 编码端尝试
+        + random embedding 300维度 + BiLSTM 2层的编码能力
+        + word2vec embedding 300维度 + BiLSTM 2层的编码能力
+        + random embedding 768维度 + BiLSTM 2层的编码能力
+        + BERT 2 层 的编码能力
+        + BERT 6 层 的编码能力
+    + span extractor尝试
+        + endpoint 取范围两端融合方式 (相加、相减等)
+        + 自注意力加权的方式 sum(sigmoid(W * E) * E)
+    + 解码端尝试
+        + FCN解码
+        + CNN解码
+        + LSTM解码
+    
+    + 预期结论：
+        + word2vec 的引入 （是否） 增加了模型的表达能力
+        + BERT模型的编码 （是否） 相比传统模型有提高
+        + BERT模型的层数加深 （是否） 效果会更好
+        + (endpoint, 自注意加权) 抽取效果会更好
+        + FCN 多层+tanh 相比简单单层 效果（是否） 会有提升
+        + 卷积核为3的卷积层 相比一层 FCN 效果（是否） 会有提升
+        + 一层LSTM 相比 一层FCN 效果（是否） 会有提升
+
++ 针对三阶段模型， 仍然涉及`encoder + span extractor + decoder`
+    + 针对二阶段选择的比较好的模块，研究三阶段效果
+
 
 # 实验记录
 ## 实验一
@@ -68,10 +112,10 @@ Q: 事实上所有的模型都会有一个问题。即匹配的问题
 普通的模型要训练100epochs，patience设置为25。为了训练更为充分  
 预训练语言模型则设置为25epochs，无patience
 
-| 模型名称| 验证集| 测试集 |
-| ----| ----| ---- |
-|r lstm 2| 35.2 | .9 
-|w_lstm_2| 60.9| 28.5
+| 模型名称| 验证集p| 验证集r | 验证集f1 |测试集 p|测试集 r|测试集 f1| 
+| ----| ----| ---- |  ---- | ---- | ---- | ---- |
+|r768 bilstm 2 | 81.98| 55.81| 66.41 | 82.15 | 56.92 | 67.25|
+
 
 
 ## 实验二
@@ -88,9 +132,12 @@ Q: 事实上所有的模型都会有一个问题。即匹配的问题
 > 突然想起了之前的encoder + matrix attention。因为attention矩阵是一个有向图，故可以进行指向。
 > 所以必须是双向的，而非单向
 
++ 训练了3个epoch，模型的loss下降到0.0036，但是解码的 值为 `0`。
+    + 尝试进行debug。
+    + 怀疑是，全预测为 0，假设10 * 10，只有一个位置， 则 就算全预测0， 平均下的loss也是0.01
+        + 解决方案是 添加mask将padding屏蔽掉 + new_mask的权重调整，让
 
-# 预期贡献
-+ 
+
 
 
 预训练模型有哪些？  
@@ -119,3 +166,5 @@ roberta
 [西多士NLP 全面的总结了各类抽取模型](https://www.cnblogs.com/sandwichnlp/p/12049829.html)  
 [徐阿衡 一篇类似于综述性质的文章](http://www.shuang0420.com/2018/09/15/%E7%9F%A5%E8%AF%86%E6%8A%BD%E5%8F%96-%E5%AE%9E%E4%BD%93%E5%8F%8A%E5%85%B3%E7%B3%BB%E6%8A%BD%E5%8F%96/)
 
+
+Dudek D . Automated Information Extraction and Classification of Matrix-Based Questionnaire Data[C]// International Conference on Systems Science. Springer International Publishing, 2017.

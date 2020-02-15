@@ -44,6 +44,7 @@ class OneStageModel(MyModel):
         self.decoder_end_list = clone(attention_decoder, len(defaults.relation2id))
         self.yingshe_encoder_list = clone(yingshe_encoder, 2)
         self.valid_metric = SanyuanzuMetric()
+        self.flag = True
     def forward(self, tokens, target_start = None, target_end = None, metadata = None):
 
         output = {}
@@ -62,7 +63,7 @@ class OneStageModel(MyModel):
         decoded_end_list = torch.stack([decoder(encoded_info_2, encoded_info_2) for decoder in self.decoder_end_list], dim=-1)
         assert decoded_start_list.shape == decoded_end_list.shape == (batchsize, seq_len, seq_len, len(defaults.relation2id))
         if self.training:
-            output['loss'] = binary_cross_entropy_with_logits(decoded_start_list, target_start) + binary_cross_entropy_with_logits(decoded_end_list, target_end)
+            output['loss'] = self.calculate_loss(decoded_start_list, target_start, mask) + self.calculate_loss(decoded_end_list, target_end, mask)
             return output
         # 预测阶段
         else:
@@ -85,55 +86,39 @@ class OneStageModel(MyModel):
                         s = text[s_span[0]: s_span[1] + 1]
                         o = text[o_span[0]: o_span[1] + 1]
                         pred_spo_list.append({"predicate": predicate, "object": o, "subject": s})
+                if self.flag:
+                    logger.info(pred_spo_list)
+                    self.flag = False
                 self.valid_metric(spo_list, pred_spo_list)
                 output[text].append({'text':text, 'spo_list': pred_spo_list})
+        self.flag = True
         return dict(output)
 
-    def mix(self, encoded_info, one_embedding):
-        "这里是求平均，应该可以有其他的融合方法，看论文需不需要"
-        assert encoded_info.shape == one_embedding.shape
-        mixed_indo = (encoded_info + one_embedding) / 2
-        return mixed_indo
-    def get_many_predict(self, encoded_info, span, mask):
-        "将span范围内的向量想办法融合与原数据进行融合"
-        batchsize, seq_len, dim_size = encoded_info.shape
-        # shape: [batchsize, 1, 2]   参考(batch_size, num_spans, 2)
-        span = span.view(batchsize, 1, 2)
-        assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
-        assert span.device == encoded_info.device == mask.device, f"{span.device} {encoded_info.device} {mask.device}"
-        # shape: [batchsize, 1, dim_size]
-        one_embedding = self.span_extractor(encoded_info, span, mask)
-        # 这里可以相加，也可以其他操作，看论文需不需要其他操作
-        # 重复到 shape: [batchsize, seq_len, dim_size]
-        one_embedding = one_embedding.repeat(1, seq_len, 1)
-        # shape: [batchsize, seq_len, dim_size]
-        mixed_info = self.mix(encoded_info, one_embedding)
+    def calculate_loss(self, pred, target, mask):
+        # pred: shape:[batchsize, seq_len, seq_len, 49]
+        assert len(pred.shape) == 4 and len(target.shape) == 4
+        assert pred.shape == target.shape
+        assert mask.shape == pred.shape[:2]
+        batchsize, seq_len, _, r_num = pred.shape
+        # shape: (batchsize, )
+        mask_length = get_lengths_from_binary_sequence_mask(mask)
+        # 设置新的mask矩阵
+        new_mask = torch.zeros((batchsize, seq_len, seq_len, r_num)).to(mask.device)
+        for i, v in enumerate(mask_length):
+            v = v.item()
+            new_mask[i, :v, :v, :] = 1
+        count_all = mask_length.sum()
+        youxiao = target.sum()
+        assert count_all.item() >= youxiao.item()
+        # 对一个batchsize的范围内，进行平均化
+        # 这个是解决正负样本的方法
 
-        # shape: [batchsize, seq_len, 49]
-        predicate_many_s = self.many_decoder_list[0](mixed_info, mask.squeeze(-1))
-        predicate_many_e = self.many_decoder_list[1](mixed_info, mask.squeeze(-1))
-        return predicate_many_s, predicate_many_e
+        new_mask[target==1] = (count_all - youxiao) / (youxiao + 1e-20)
+        return binary_cross_entropy_with_logits(pred, target, new_mask, reduction = 'sum')
 
 
-    def calulate_one_loss(self, one_s, one_e, one_start_tensor, one_end_tensor, mask, output):
-        "例如，计算subject的loss值，这里集中处理了，保证forward里的逻辑会比较清晰"
-        lossa = binary_cross_entropy_with_logits(one_start_tensor, one_s, mask)
-        lossb = binary_cross_entropy_with_logits(one_end_tensor, one_e, mask)
-        if self.mode == 's2po':
-            output['subject_loss'] = lossa + lossb
-        else:
-            output['object_loss'] = lossa + lossb
-        return output
-    def calulate_many_loss(self, s, e, start_tensor, end_tensor, mask, output):
-        "例如，计算object的loss值，这里集中处理了，保证forward里的逻辑会比较清晰"
-        lossa = binary_cross_entropy_with_logits(start_tensor, s, mask)
-        lossb = binary_cross_entropy_with_logits(end_tensor, e, mask)
-        # 因为是在预测多的那个，故要反过来。
-        if self.mode == 's2po':
-            output['object_loss'] = lossa + lossb
-        else:
-            output['subject_loss'] = lossa + lossb
-        return output
+
+
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         if self.training:

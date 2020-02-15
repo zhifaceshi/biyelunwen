@@ -19,10 +19,7 @@ import sys
 from pathlib import Path
 from allennlp.commands import main
 
-override_dict = {"train_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt","validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_dev.txt","test_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_test.txt"
-,"distributed": {
-
-}
+override_dict = {"train_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt","validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_train.txt","test_data_path":"/storage/gs2018/liangjiaxi/bishe/data/processed_data/fake_test.txt"
                  }
 override_dict = json.dumps(override_dict).replace(' ', "").replace('\n', '')
 def run(exp_name, config_file, ):
@@ -44,5 +41,5 @@ if __name__ == '__main__':
     # exp_name = "exp1"
     # config_file = 'bert_fcn_1'
     exp_name = "exp3"
-    config_file = 'r_lstm_2_linear_bilinear'
+    config_file = 'r_lstm_2_linear_linear'
     run(exp_name, config_file)

@@ -19,9 +19,15 @@ import sys
 from pathlib import Path
 from allennlp.commands import main
 
-def run(exp_name, config_file, ):
+def run(exp_name, config_file, qianru = '--force'):
+    # if qianru == 'r':
+    #     qianru = '--recover'
+    # elif qianru == 'f':
+    #     qianru = '--force'
+    # else:
+    #     raise Exception
     print(os.getcwd())
-    command = f"allennlp train ./configs/{exp_name}/{config_file}.json -s ./output/{exp_name}/{config_file.split('.')[0]}   -f   --include-package my_library"
+    command = f"allennlp train ./configs/{exp_name}/{config_file}.json -s ./output/{exp_name}/{config_file.split('.')[0]}   {qianru}   --include-package my_library"
     sys.argv = command.split()
     print(sys.argv)
     main()

@@ -341,12 +341,14 @@ def matrix_decode(m_s:torch.Tensor, m_e: torch.Tensor, length):
     :param length:
     :return:
     """
+    # 防止抽取出padding来。
     if torch.is_tensor(length):
         length = length.item()
     start_tuple = torch.where(m_s > defaults.yuzhi)
     end_tuple = torch.where(m_e > defaults.yuzhi)
-    start_points = [(x.item(), y.item()) for x, y in zip(start_tuple[0], start_tuple[1])]
-    end_points = [(x.item(), y.item()) for x, y in zip(end_tuple[0], end_tuple[1])]
+    # 过滤掉那些落在paddinig区域的值
+    start_points = [(x.item(), y.item()) for x, y in zip(start_tuple[0], start_tuple[1]) if x.item() < length and y.item() < length]
+    end_points = [(x.item(), y.item()) for x, y in zip(end_tuple[0], end_tuple[1]) if x.item() < length and y.item() < length]
     ret = []
     for s_point in start_points:
         e_point = find_nearst_point(s_point, end_points)

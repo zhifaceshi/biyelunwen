@@ -45,8 +45,8 @@
 
     "attention_decoder": {
       "type": "linear",
-      "matrix_1_dim": 100,
-      "matrix_2_dim": 100
+      "tensor_1_dim": 100,
+      "tensor_2_dim": 100
     }
   },
 
@@ -61,14 +61,14 @@
   },
   "distributed": {
   "cuda_devices": [0, 1],
+//    "num_nodes": 4,
   "master_address": "127.0.0.1",
-  "master_port": 29508
+  "master_port": 29510
 },
   "trainer": {
     "optimizer": {
       "type": "adam",
       "lr": 5e-4
-
     },
     "learning_rate_scheduler": {
       "type": "slanted_triangular",

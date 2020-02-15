@@ -61,8 +61,10 @@
   },
   "distributed": {
   "cuda_devices": [0, 1],
+    "num_nodes": 4,
   "master_address": "127.0.0.1",
-  "master_port": 29508
+  "master_port": 29509
+
 },
   "trainer": {
     "optimizer": {
