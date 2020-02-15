@@ -21,8 +21,10 @@
 
         "token_embedders": {
           "tokens": {
-              "type": "pretrained_transformer",
-              "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/"
+              "type": "reduced_pretrained_transformer",
+              "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/",
+            "reduced_num": 12
+
           }
         }
 
@@ -63,7 +65,7 @@
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["tokens", "tokens___token_ids"]],
-    "batch_size": 8
+    "batch_size": 1
   },
   "validation_iterator": {
     "type": "basic",
@@ -75,7 +77,7 @@
   "trainer": {
     "optimizer": {
       "type": "adam",
-      "lr": 5e-4
+      "lr": 5e-5
 
     },
     "learning_rate_scheduler": {
@@ -84,7 +86,7 @@
       "num_steps_per_epoch": 8829
     },
     "validation_metric": "+f1",
-    "num_epochs": 50,
+    "num_epochs": 25,
 
     "patience": null
   }

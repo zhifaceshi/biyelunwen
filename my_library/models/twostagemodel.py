@@ -129,7 +129,8 @@ class TwoStageModel(MyModel):
 
                 self.valid_metric(spo_list, pred_spo_list)
                 output[text].append({'text':text, 'spo_list': pred_spo_list})
-                return dict(output)
+            # 注意，这里的层级。如果多缩进，则只看每个batch的第一条数据的正确与否
+            return dict(output)
 
     def mix(self, encoded_info, one_embedding):
         "这里是求平均，应该可以有其他的融合方法，看论文需不需要"
