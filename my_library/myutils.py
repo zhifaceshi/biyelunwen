@@ -346,14 +346,22 @@ def matrix_decode(m_s:torch.Tensor, m_e: torch.Tensor, length):
         length = length.item()
     start_tuple = torch.where(m_s > defaults.yuzhi)
     end_tuple = torch.where(m_e > defaults.yuzhi)
+
     # 过滤掉那些落在paddinig区域的值
     start_points = [(x.item(), y.item()) for x, y in zip(start_tuple[0], start_tuple[1]) if x.item() < length and y.item() < length]
     end_points = [(x.item(), y.item()) for x, y in zip(end_tuple[0], end_tuple[1]) if x.item() < length and y.item() < length]
+
+
     ret = []
     for s_point in start_points:
         e_point = find_nearst_point(s_point, end_points)
         if e_point[0] is not None:
-            ret.append([s_point, e_point])
+            assert len(s_point) == len(e_point) == 2
+            # 这里需要反解码
+            # 原因在于datareader时，我们标记的点（0， 2） 分别代表subject, object的开始位置 （1，3）同理为结束
+            # 我们需要反解回（0， 1）， （2， 3）。这个才是真正的结果
+            ret.append([(s_point[0], e_point[0])
+                           , s_point[1], e_point[1]])
     return ret
 
 
