@@ -1,0 +1,83 @@
+{
+  "dataset_reader": {
+    "type": "one_stage"
+  },
+  "validation_dataset_reader": {
+    "type": "valid"
+  },
+  "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_train.txt",
+  "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_dev.txt",
+  "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
+  "evaluate_on_test": true,
+  "model": {
+    "type": "onestagemodel",
+    "encoder": {
+      "type": "encoder",
+      "text_field_embedder": {
+        "type": "basic",
+
+        "token_embedders": {
+          "tokens": {
+            "type": "embedding",
+            "embedding_dim": 768,
+            "trainable": true
+          }
+        }
+
+      },
+      "encoder": {
+        "type": "lstm",
+        "num_layers": 2,
+        "bidirectional": true,
+        "input_size": 768,
+        "hidden_size": 384
+      }
+    },
+    "yingshe_encoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 768,
+        "num_layers": 1,
+        "hidden_dims": 100,
+        "activations": "linear"
+      }
+    },
+    "attention_decoder": {
+      "type": "bilinear",
+      "matrix_1_dim": 100,
+      "matrix_2_dim": 100
+
+    },
+
+  },
+  "iterator": {
+    "type": "bucket",
+    "sorting_keys": [["tokens", "tokens___tokens"]],
+    "batch_size": 32
+  },
+  "validation_iterator": {
+    "type": "basic",
+    "batch_size": 32
+  },
+  "distributed": {
+  "cuda_devices": [0, 1],
+  "master_address": "127.0.0.1",
+  "master_port": 29508
+},
+  "trainer": {
+    "optimizer": {
+      "type": "adam",
+      "lr": 5e-4
+
+    },
+    "learning_rate_scheduler": {
+      "type": "slanted_triangular",
+      "num_epochs": 15,
+      "num_steps_per_epoch": 8829
+    },
+    "validation_metric": "+f1",
+    "num_epochs": 100,
+    //        "grad_norm": 10.0,
+    "patience": 25
+  }
+}

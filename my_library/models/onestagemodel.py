@@ -35,12 +35,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 class OneStageModel(MyModel):
     def __init__(self, vocab: Vocabulary,
                  encoder: Seq2SeqEncoder,
+                 yingshe_encoder: Seq2SeqEncoder,
                  attention_decoder: MatrixAttention,
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super().__init__(vocab, regularizer)
         self.encoder = encoder
         self.decoder_start_list = clone(attention_decoder, len(defaults.relation2id))
         self.decoder_end_list = clone(attention_decoder, len(defaults.relation2id))
+        self.yingshe_encoder_list = clone(yingshe_encoder, 2)
         self.valid_metric = SanyuanzuMetric()
     def forward(self, tokens, target_start = None, target_end = None, metadata = None):
 
@@ -53,10 +55,11 @@ class OneStageModel(MyModel):
         mask = encoded_dct['mask']
 
         batchsize, seq_len, dim_size = encoded_info.shape
-        # 这里将padding的部分设置为0，方便计算
-        encoded_info[mask == 0] = 0
-        decoded_start_list = torch.stack([decoder(encoded_info, encoded_info) for decoder in self.decoder_start_list], dim=-1)
-        decoded_end_list = torch.stack([decoder(encoded_info, encoded_info) for decoder in self.decoder_end_list], dim=-1)
+
+        encoded_info_1 = self.yingshe_encoder_list[0](encoded_info, mask)
+        encoded_info_2 = self.yingshe_encoder_list[1](encoded_info, mask)
+        decoded_start_list = torch.stack([decoder(encoded_info_1, encoded_info_1) for decoder in self.decoder_start_list], dim=-1)
+        decoded_end_list = torch.stack([decoder(encoded_info_2, encoded_info_2) for decoder in self.decoder_end_list], dim=-1)
         assert decoded_start_list.shape == decoded_end_list.shape == (batchsize, seq_len, seq_len, len(defaults.relation2id))
         if self.training:
             output['loss'] = binary_cross_entropy_with_logits(decoded_start_list, target_start) + binary_cross_entropy_with_logits(decoded_end_list, target_end)

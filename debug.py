@@ -44,5 +44,5 @@ if __name__ == '__main__':
     # exp_name = "exp1"
     # config_file = 'bert_fcn_1'
     exp_name = "exp3"
-    config_file = 'r_lstm_2_dot'
+    config_file = 'r_lstm_2_linear_bilinear'
     run(exp_name, config_file)

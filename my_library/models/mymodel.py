@@ -16,9 +16,9 @@ from allennlp.common import FromParams, Registrable
 from allennlp.data import Instance, Vocabulary, TextFieldTensors
 from allennlp.data.batch import Batch
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, Seq2SeqEncoder
+from allennlp.modules import TextFieldEmbedder, Seq2SeqEncoder, MatrixAttention
 from allennlp.nn import util, RegularizerApplicator
-from allennlp.nn.util import get_text_field_mask
+from allennlp.nn.util import get_text_field_mask, clone
 from overrides import overrides
 from tqdm import tqdm
 from pprint import pprint
@@ -102,6 +102,4 @@ class Decoder(torch.nn.Module, Registrable):
         return {
             'decoded_tensor': decoder_tensor
         }
-
-
 
