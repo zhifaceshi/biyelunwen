@@ -30,6 +30,10 @@ def run(exp_name, config_file, ):
 
     main()
 if __name__ == '__main__':
+
     exp_name = "exp1"
     config_file = 'bert_fcn_1'
+    # exp_name = 'debug'
+    # # config_file = 'debug2' # 二阶段模型调试bert，修改此表后
+    # config_file = 'debug3_1' # 三阶段模型，不用bert
     run(exp_name, config_file)

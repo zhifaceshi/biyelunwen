@@ -60,9 +60,9 @@ class ThreeStageModel(MyModel):
         mask = encoded_dct['mask']
 
         # shape: [batchsize, seq_len, 1]
-        one_start_tensor = self.one_decoder_list[0](encoded_info)
+        one_start_tensor = self.first_decoder_list[0](encoded_info)
         #shape: [batchsize, seq_len, 1]
-        one_end_tensor = self.one_decoder_list[1](encoded_info)
+        one_end_tensor = self.first_decoder_list[1](encoded_info)
         # 训练阶段
         if self.training:
             mask = mask.unsqueeze(-1).float()
@@ -72,7 +72,7 @@ class ThreeStageModel(MyModel):
             predicate_second_s, predicate_second_e = self.get_second_predict(encoded_info, one_span, mask)
             self.calulate_second_loss(two_s, two_e, predicate_second_s, predicate_second_e, mask, output)
 
-            pred_relationship = self.get_thid_predict(encoded_info, one_span, two_span, mask)
+            pred_relationship = self.get_third_predict(encoded_info, one_span, two_span, mask)
             self.calulate_third_loss(relationship, pred_relationship, output)
             output['loss'] = output['subject_loss'] + output['object_loss'] + output['relationship_loss']
             return output
@@ -114,29 +114,35 @@ class ThreeStageModel(MyModel):
                     # 如果mode是s2po的话，则说明s是one
                     one_word: str = text[span[0]: span[1] + 1] # 解出了词
 
-                    span = torch.tensor(span).view(1,1,-1).to(mask.device)# 确保GPU能正常训练
-
-                    predicate_second_s, predicate_second_e = self.get_second_predict(encoded_info, span, mask)
+                    span = torch.tensor(span).view(1,1,-1).to(mask_t.device)# 确保GPU能正常训练
+                    assert span.shape == (1, 1, 2)
+                    predicate_second_s, predicate_second_e = self.get_second_predict(encode_info_t, span, mask_t)
                     # 压缩一下，0 ~ 1的范围
                     predicate_second_s = torch.sigmoid_(predicate_second_s)
                     predicate_second_e = torch.sigmoid_(predicate_second_e)
-                    predicate_second_s = predicate_second_s.squeeze(-1).float()
-                    predicate_second_e = predicate_second_e.squeeze(-1).float()
-                    assert predicate_second_s.shape == (batchsize, seq_len)
+                    # shape: (batchsize, seq_len)
+                    predicate_second_s = predicate_second_s.squeeze(-1).float() * mask_t.float()
+                    predicate_second_e = predicate_second_e.squeeze(-1).float() * mask_t.float()
+                    predicate_second_s = predicate_second_s.squeeze(0)
+                    predicate_second_e = predicate_second_e.squeeze(0)
+                    assert predicate_second_s.shape == (seq_len, ), f"{predicate_second_s.shape}"
 
                     two_span_list = get_span_list(predicate_second_s, predicate_second_e, defaults.yuzhi)
                     for two_span in two_span_list:
                         two_word = text[two_span[0]: two_span[1] + 1] # 解出了另一个词
-                        two_span = torch.tensor(two_span).view(1,1,-1).to(mask.device)# 确保GPU能正常训练
-                        predicate_relationship = self.get_thid_predict(encoded_info, span, two_span, mask)
+                        two_span = torch.tensor(two_span).view(1,1,-1).to(mask_t.device)# 确保GPU能正常训练
+                        # shape: [batchsize, 49]
+                        predicate_relationship = self.get_third_predict(encode_info_t, span, two_span, mask_t)
+                        assert predicate_relationship.shape == (1, len(defaults.relation2id)), f'{predicate_relationship.shape}'
                         predicate_relationship = torch.sigmoid(predicate_relationship).view(-1)
-                        for i in range(len(predicate_relationship)):
-                            if predicate_relationship[i] > defaults.yuzhi:
-                                r = defaults.id2relation[i]
-                                if self.mode == 'sop':
-                                    pred_spo_list.append({"predicate": r, "object": two_word, "subject": one_word})
-                                else:
-                                    pred_spo_list.append({"predicate": r, "object": one_word, "subject": two_word})
+                        pred_idx = torch.where(predicate_relationship > defaults.yuzhi)[0]
+
+                        for idx in pred_idx:
+                            r = defaults.id2relation[idx.item()] # 真正名称
+                            if self.mode == 'sop':
+                                pred_spo_list.append({"predicate": r, "object": two_word, "subject": one_word})
+                            else:
+                                pred_spo_list.append({"predicate": r, "object": one_word, "subject": two_word})
 
                 self.valid_metric(spo_list, pred_spo_list)
                 output[text].append({'text':text, 'spo_list': pred_spo_list})
@@ -157,7 +163,7 @@ class ThreeStageModel(MyModel):
         assert span.device == encoded_info.device
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
         # shape: [batchsize, 1, dim_size]
-        one_embedding = self.span_extractor(encoded_info, span, mask)
+        one_embedding = self.span_extractor_list[0](encoded_info, span, mask)
         # 这里可以相加，也可以其他操作，看论文需不需要其他操作
         # 重复到 shape: [batchsize, seq_len, dim_size]
         one_embedding = one_embedding.repeat(1, seq_len, 1)
@@ -169,7 +175,7 @@ class ThreeStageModel(MyModel):
         predicate_second_e = self.second_decoder_list[1](mixed_info, mask.squeeze(-1))
         return predicate_second_s, predicate_second_e
 
-    def get_thid_predict(self, encoded_info, first_span, second_span, mask):
+    def get_third_predict(self, encoded_info, first_span, second_span, mask):
         "将span范围内的向量想办法融合与原数据进行融合"
         batchsize, seq_len, dim_size = encoded_info.shape
         # shape: [batchsize, 1, 2]   参考(batch_size, num_spans, 2)
@@ -177,7 +183,7 @@ class ThreeStageModel(MyModel):
         assert span.device == encoded_info.device
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
         # shape: [batchsize, 1, dim_size]
-        one_embedding = self.span_extractor(encoded_info, span, mask)
+        one_embedding = self.span_extractor_list[0](encoded_info, span, mask) #抽取第一个，要用0号
         # 这里可以相加，也可以其他操作，看论文需不需要其他操作
         # 重复到 shape: [batchsize, seq_len, dim_size]
         one_embedding = one_embedding.repeat(1, seq_len, 1)
@@ -186,7 +192,7 @@ class ThreeStageModel(MyModel):
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
         assert span.device == encoded_info.device
         # shape: [batchsize, 1, dim_size]
-        two_embedding = self.span_extractor(encoded_info, span, mask)
+        two_embedding = self.span_extractor_list[1](encoded_info, span, mask)
         # 这里可以相加，也可以其他操作，看论文需不需要其他操作
         # 重复到 shape: [batchsize, seq_len, dim_size]
         two_embedding = two_embedding.repeat(1, seq_len, 1)
@@ -195,8 +201,9 @@ class ThreeStageModel(MyModel):
         mixed_info = self.mix(encoded_info, [one_embedding, two_embedding])
 
         # 我们将subject，object和原句的信息融合了之后，就要进行关系判断了
+
         # shape: [batchsize, seq_len, 49]
-        pred_relationship = self.thrid_decoder(mixed_info)
+        pred_relationship = self.thrid_decoder(mixed_info, mask.squeeze(-1))
         return pred_relationship
 
 
@@ -220,7 +227,9 @@ class ThreeStageModel(MyModel):
             output['subject_loss'] = lossa + lossb
         return output
     def calulate_third_loss(self, r, pr, output):
+        # shape: [batchsize, 49]
         assert r.shape == pr.shape
+        assert len(r.shape) == 2
         loss = binary_cross_entropy_with_logits(pr, r)
         output['relationship_loss'] = loss
 
