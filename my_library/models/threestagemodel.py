@@ -164,9 +164,10 @@ class ThreeStageModel(MyModel):
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
         # shape: [batchsize, 1, dim_size]
         one_embedding = self.span_extractor_list[0](encoded_info, span, mask)
-        # 这里可以相加，也可以其他操作，看论文需不需要其他操作
-        # 重复到 shape: [batchsize, seq_len, dim_size]
-        one_embedding = one_embedding.repeat(1, seq_len, 1)
+        if one_embedding.shape[1] == 1:
+            one_embedding = one_embedding.repeat(1, seq_len, 1)
+        else:
+            assert one_embedding.shape[1] == seq_len, f"{one_embedding.shape}"
         # shape: [batchsize, seq_len, dim_size]
         mixed_info = self.mix(encoded_info, [one_embedding, ])
 
@@ -186,7 +187,10 @@ class ThreeStageModel(MyModel):
         one_embedding = self.span_extractor_list[0](encoded_info, span, mask) #抽取第一个，要用0号
         # 这里可以相加，也可以其他操作，看论文需不需要其他操作
         # 重复到 shape: [batchsize, seq_len, dim_size]
-        one_embedding = one_embedding.repeat(1, seq_len, 1)
+        if one_embedding.shape[1] == 1:
+            one_embedding = one_embedding.repeat(1, seq_len, 1)
+        else:
+            assert one_embedding.shape[1] == seq_len, f"{one_embedding.shape}"
 
         span = second_span.view(batchsize, 1, 2)
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"

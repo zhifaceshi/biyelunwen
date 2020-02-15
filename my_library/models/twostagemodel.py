@@ -58,9 +58,9 @@ class TwoStageModel(MyModel):
         mask = encoded_dct['mask']
 
         # shape: [batchsize, seq_len, 1]
-        one_start_tensor = self.one_decoder_list[0](encoded_info)
+        one_start_tensor = self.one_decoder_list[0](encoded_info, mask)
         #shape: [batchsize, seq_len, 1]
-        one_end_tensor = self.one_decoder_list[1](encoded_info)
+        one_end_tensor = self.one_decoder_list[1](encoded_info, mask)
         # 训练阶段
         if self.training:
             mask = mask.unsqueeze(-1).float()
@@ -134,7 +134,7 @@ class TwoStageModel(MyModel):
 
     def mix(self, encoded_info, one_embedding):
         "这里是求平均，应该可以有其他的融合方法，看论文需不需要"
-        assert encoded_info.shape == one_embedding.shape
+        assert encoded_info.shape == one_embedding.shape, f'{encoded_info.shape} {one_embedding.shape}'
         mixed_indo = (encoded_info + one_embedding) / 2
         return mixed_indo
     def get_many_predict(self, encoded_info, span, mask):
@@ -145,10 +145,13 @@ class TwoStageModel(MyModel):
         assert span.shape == (batchsize, 1, 2), f"shape is {span.shape}"
         assert span.device == encoded_info.device == mask.device, f"{span.device} {encoded_info.device} {mask.device}"
         # shape: [batchsize, 1, dim_size]
-        one_embedding = self.span_extractor(encoded_info, span, mask)
+        one_embedding = self.span_extractor(encoded_info, span, mask.squeeze(-1))
         # 这里可以相加，也可以其他操作，看论文需不需要其他操作
         # 重复到 shape: [batchsize, seq_len, dim_size]
-        one_embedding = one_embedding.repeat(1, seq_len, 1)
+        if one_embedding.shape[1] == 1:
+            one_embedding = one_embedding.repeat(1, seq_len, 1)
+        else:
+            assert one_embedding.shape[1] == seq_len, f"{one_embedding.shape}"
         # shape: [batchsize, seq_len, dim_size]
         mixed_info = self.mix(encoded_info, one_embedding)
 

@@ -85,6 +85,7 @@ class OneStageModel(MyModel):
                     for s_span, o_span in s_o_spans:
                         s = text[s_span[0]: s_span[1] + 1]
                         o = text[o_span[0]: o_span[1] + 1]
+                        assert len(s) !=0 and len(o) != 0
                         pred_spo_list.append({"predicate": predicate, "object": o, "subject": s})
                 if self.flag:
                     logger.info(pred_spo_list)

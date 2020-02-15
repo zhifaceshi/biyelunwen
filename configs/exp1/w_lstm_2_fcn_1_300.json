@@ -86,7 +86,7 @@
       "num_steps_per_epoch": 8829
     },
     "validation_metric": "+f1",
-    "num_epochs": 100,
+    "num_epochs": 50,
     //        "grad_norm": 10.0,
     "patience": 25
   }
