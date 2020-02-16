@@ -1,7 +1,6 @@
 {
   "dataset_reader": {
-    "type": "two_stage",
-    "mode": "s2po"
+    "type": "one_stage"
   },
   "validation_dataset_reader": {
     "type": "valid"
@@ -11,7 +10,7 @@
   "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
   "evaluate_on_test": true,
   "model": {
-    "type": "twostagemodel",
+    "type": "onestagemodel",
     "encoder": {
       "type": "encoder",
       "text_field_embedder": {
@@ -19,8 +18,8 @@
 
         "token_embedders": {
           "tokens": {
-            "type": "embedding",
-            "embedding_dim": 768,
+            "pretrained_file": "/home/liangjiaxi/TMP_PROJECT/shuoshibiyesheji/data/original_data/token_vec_300.bin",
+            "embedding_dim": 300,
             "trainable": true
           }
         }
@@ -30,31 +29,26 @@
         "type": "lstm",
         "num_layers": 2,
         "bidirectional": true,
-        "input_size": 768,
-        "hidden_size": 384
+        "input_size": 300,
+        "hidden_size": 150
       }
     },
-    "one_decoder": {
-      "type": "lstm",
-      "num_layers": 1,
-      "bidirectional": false,
-      "input_size": 768,
-      "hidden_size": 1
+    "yingshe_encoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 300,
+        "num_layers": 1,
+        "hidden_dims": 100,
+        "activations": "linear"
+      }
     },
-    "many_decoder": {
-      "type": "lstm",
-      "num_layers": 1,
-      "bidirectional": false,
-      "input_size": 768,
-      "hidden_size": 49,
+    "attention_decoder": {
+      "type": "bilinear",
+      "matrix_1_dim": 100,
+      "matrix_2_dim": 100
 
-    },
-    "span_extractor": {
-      "type": "endpoint",
-      "input_dim": 768,
-      "combination": "x+y"
-    },
-    "mode": "s2po"
+    }
+
   },
   "iterator": {
     "type": "bucket",
@@ -63,11 +57,15 @@
   },
   "validation_iterator": {
     "type": "basic",
-    "batch_size": 128
+    "batch_size": 32
   },
   "distributed": {
-    "cuda_devices": [0, 1]
-  },
+  "cuda_devices": [0, 1],
+
+  "master_address": "127.0.0.1",
+  "master_port": 29309
+
+},
   "trainer": {
     "optimizer": {
       "type": "adam",
@@ -82,6 +80,6 @@
     "validation_metric": "+f1",
     "num_epochs": 50,
     //        "grad_norm": 10.0,
-    "patience": null
+    "patience": 25
   }
 }

@@ -255,38 +255,43 @@ def get_empty(text, dim)->Tuple[np.array, np.array]:
     end_array = torch.zeros((len(text), dim))
     return start_array, end_array
 
-def get_span_list(array1, array2, yuzhi):
+def get_span_list(array1, array2, yuzhi, length):
     """
     输入 2个一维数组， 得到[[1, 2], [3, 4]] 的列表
     # 就近匹配
     >>> array1 = torch.tensor([0.6,0.3,0.4,0.6,0.1])
     >>> array2 = torch.tensor([0.1,0.6,0.4,0.3,0.6])
-    >>> get_span_list(array1, array2, 0.5)
+    >>> get_span_list(array1, array2, 0.5, 100)
     [[0, 1], [3, 4]]
 
     # 多个结尾选最近
     >>> array1 = torch.tensor([0.6,0.3,0.4,0.6,0.1])
     >>> array2 = torch.tensor([0.6,0.6,0.4,0.3,0.6])
-    >>> get_span_list(array1, array2, 0.5)
+    >>> get_span_list(array1, array2, 0.5, 100)
     [[0, 0], [3, 4]]
 
     # 只有一个
     >>> array1 = torch.tensor([0.3,0.3,0.4,0.6,0.1])
     >>> array2 = torch.tensor([0.1,0.3,0.4,0.6,0.3])
-    >>> get_span_list(array1, array2, 0.5)
+    >>> get_span_list(array1, array2, 0.5, 100)
     [[3, 3]]
 
     # 多个开始选最近
     >>> array1 = torch.tensor([0.6,0.6,0.6,0.6,0.6])
     >>> array2 = torch.tensor([0.1,0.6,0.4,0.3,0.6])
-    >>> get_span_list(array1, array2, 0.5)
+    >>> get_span_list(array1, array2, 0.5, 100)
     [[0, 1], [1, 1], [2, 4], [3, 4], [4, 4]]
     """
+    if torch.is_tensor(length):
+        length = length.item()
     assert array1.dim() == 1 and array2.dim() == 1, f"{array1.shape} {array2.shape}"
     # 返回的是 二元组， （torch([]), dtype =...）
     start_index = torch.where(array1 > yuzhi)[0]
     end_index = torch.where(array2 > yuzhi)[0]
 
+    # 根据长度进行过滤，这样解码会更高效一些
+    start_index = start_index[start_index < length]
+    end_index = end_index[end_index < length]
     ans = []
     # 左闭右闭
     for i in start_index:
@@ -294,6 +299,7 @@ def get_span_list(array1, array2, yuzhi):
         if len(j) > 0:
             # 最近匹配，可以根据你的论文选择最近、最远等等
             j = j[0]
+            assert i.item() < length and j.item() < length
             ans.append([i.item(), j.item()])
     return ans
 
@@ -351,7 +357,6 @@ def matrix_decode(m_s:torch.Tensor, m_e: torch.Tensor, length):
     start_points = [(x.item(), y.item()) for x, y in zip(start_tuple[0], start_tuple[1]) if x.item() < length and y.item() < length]
     end_points = [(x.item(), y.item()) for x, y in zip(end_tuple[0], end_tuple[1]) if x.item() < length and y.item() < length]
 
-
     ret = []
     for s_point in start_points:
         e_point = find_nearst_point(s_point, end_points)
@@ -360,8 +365,7 @@ def matrix_decode(m_s:torch.Tensor, m_e: torch.Tensor, length):
             # 这里需要反解码
             # 原因在于datareader时，我们标记的点（0， 2） 分别代表subject, object的开始位置 （1，3）同理为结束
             # 我们需要反解回（0， 1）， （2， 3）。这个才是真正的结果
-            ret.append([(s_point[0], e_point[0])
-                           , s_point[1], e_point[1]])
+            ret.append([(s_point[0], e_point[0]), (s_point[1], e_point[1])])
     return ret
 
 

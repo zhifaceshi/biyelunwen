@@ -44,6 +44,7 @@ class OneStageModel(MyModel):
         self.decoder_end_list = clone(attention_decoder, len(defaults.relation2id))
         self.yingshe_encoder_list = clone(yingshe_encoder, 2)
         self.valid_metric = SanyuanzuMetric()
+        #TODO()如果验证还是很低，则考虑添加一个新的metric来查看预测的准确率
         self.flag = True
     def forward(self, tokens, target_start = None, target_end = None, metadata = None):
 

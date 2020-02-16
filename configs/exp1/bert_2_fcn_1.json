@@ -65,7 +65,7 @@
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["tokens", "tokens___token_ids"]],
-    "batch_size": 64
+    "batch_size": 128
   },
   "validation_iterator": {
     "type": "basic",

@@ -47,6 +47,7 @@ class TwoStageModel(MyModel):
         self.valid_metric = SanyuanzuMetric()
         assert mode in ['s2po', 'o2ps']
         self.mode = mode
+        self.flag = True
     def forward(self, tokens, span=None, one_s=None, one_e=None, many_s=None, many_e=None, metadata=None):
 
         output = {}
@@ -94,12 +95,13 @@ class TwoStageModel(MyModel):
             assert one_start_tensor.size(0) == one_end_tensor.size(0) == encoded_info.size(0) == len(metadata) == mask.size(0)
             for one_start_t, one_end_t, encode_info_t, spo_list_t, mask_t in zip(one_start_tensor, one_end_tensor, encoded_info, metadata, mask):
                 # shape: [1, seq_len]
+                length = mask_t.sum().item()
                 mask_t = mask_t.unsqueeze(0)
                 assert mask_t.shape == (1, seq_len)
 
                 # shape: [1, seq_len, dim_size]
                 encode_info_t = encode_info_t.unsqueeze(0)
-                one_span_lst = get_span_list(one_start_t, one_end_t, defaults.yuzhi)
+                one_span_lst = get_span_list(one_start_t, one_end_t, defaults.yuzhi, length)
                 text = spo_list_t['text']
                 spo_list = spo_list_t['spo_list']
                 pred_spo_list = []
@@ -118,17 +120,22 @@ class TwoStageModel(MyModel):
                     assert predicate_many_s.shape == (49, seq_len), f"{predicate_many_s.shape}"
                     # 遍历49种关系，解出相应的答案
                     for relationship_id, (ps, pe) in enumerate(zip(predicate_many_s, predicate_many_e)):
-                        many_span_lst = get_span_list(ps, pe, defaults.yuzhi)
+                        many_span_lst = get_span_list(ps, pe, defaults.yuzhi, length)
                         predicate = defaults.id2relation[relationship_id]
                         for i, j in many_span_lst:
                             many_one_word: str = text[i: j+1]
+                            if len(one_word) == 0 or len(many_one_word) == 0:
+                                continue
                             if self.mode == 's2po':
                                 pred_spo_list.append({"predicate": predicate, "object": many_one_word, "subject": one_word})
                             else:
                                 pred_spo_list.append({"predicate": predicate, "object": one_word, "subject": many_one_word})
-
+                if self.flag:
+                    print(pred_spo_list)
+                    self.flag = False
                 self.valid_metric(spo_list, pred_spo_list)
                 output[text].append({'text':text, 'spo_list': pred_spo_list})
+            self.flag = True
             # 注意，这里的层级。如果多缩进，则只看每个batch的第一条数据的正确与否
             return dict(output)
 

@@ -23,7 +23,7 @@
           "tokens": {
               "type": "reduced_pretrained_transformer",
               "model_name": "/storage/gs2018/liangjiaxi/CORPUS/PRETRAINED/bert/",
-            "reduced_num": 2
+            "reduced_num": 6
 
           }
         }
