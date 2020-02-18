@@ -50,7 +50,7 @@ class ThreeStageModel(MyModel):
         self.valid_metric = SanyuanzuMetric()
         assert mode in ['sop', 'osp']
         self.mode = mode
-
+        self.flag = True
     def forward(self, tokens, one_span=None, two_span = None, one_s=None, one_e=None, two_s=None, two_e=None, relationship = None, metadata=None):
         output = {}
         encoded_dct = self.encoder(tokens)
@@ -76,8 +76,7 @@ class ThreeStageModel(MyModel):
             self.calulate_third_loss(relationship, pred_relationship, output)
             output['loss'] = output['subject_loss'] + output['object_loss'] + output['relationship_loss']
             return output
-        #TODO()调试预测阶段代码
-        # 预测阶段
+
         else:
             output = collections.defaultdict(list)
 
@@ -97,15 +96,17 @@ class ThreeStageModel(MyModel):
             one_end_tensor = one_end_tensor.squeeze(-1).float()
             assert one_start_tensor.shape == (batchsize, seq_len)
 
+            # 遍历所有的
             assert one_start_tensor.size(0) == one_end_tensor.size(0) == encoded_info.size(0) == len(metadata) == mask.size(0)
             for one_start_t, one_end_t, encode_info_t, spo_list_t, mask_t in zip(one_start_tensor, one_end_tensor, encoded_info, metadata, mask):
                 # shape: [1, seq_len]
+                length = mask_t.sum().item()
                 mask_t = mask_t.unsqueeze(0)
                 assert mask_t.shape == (1, seq_len)
 
                 # shape: [1, seq_len, dim_size]
                 encode_info_t = encode_info_t.unsqueeze(0)
-                one_span_lst = get_span_list(one_start_t, one_end_t, defaults.yuzhi)
+                one_span_lst = get_span_list(one_start_t, one_end_t, defaults.yuzhi, length)
                 text = spo_list_t['text']
                 spo_list = spo_list_t['spo_list']
                 pred_spo_list = []
@@ -127,7 +128,7 @@ class ThreeStageModel(MyModel):
                     predicate_second_e = predicate_second_e.squeeze(0)
                     assert predicate_second_s.shape == (seq_len, ), f"{predicate_second_s.shape}"
 
-                    two_span_list = get_span_list(predicate_second_s, predicate_second_e, defaults.yuzhi)
+                    two_span_list = get_span_list(predicate_second_s, predicate_second_e, defaults.yuzhi, length)
                     for two_span in two_span_list:
                         two_word = text[two_span[0]: two_span[1] + 1] # 解出了另一个词
                         two_span = torch.tensor(two_span).view(1,1,-1).to(mask_t.device)# 确保GPU能正常训练
@@ -137,16 +138,21 @@ class ThreeStageModel(MyModel):
                         predicate_relationship = torch.sigmoid(predicate_relationship).view(-1)
                         pred_idx = torch.where(predicate_relationship > defaults.yuzhi)[0]
 
+                        if len(two_word) == 0 or len(one_word) == 0:
+                            continue
                         for idx in pred_idx:
                             r = defaults.id2relation[idx.item()] # 真正名称
                             if self.mode == 'sop':
                                 pred_spo_list.append({"predicate": r, "object": two_word, "subject": one_word})
                             else:
                                 pred_spo_list.append({"predicate": r, "object": one_word, "subject": two_word})
-
+                if self.flag:
+                    print(pred_spo_list)
+                    self.flag = False
                 self.valid_metric(spo_list, pred_spo_list)
                 output[text].append({'text':text, 'spo_list': pred_spo_list})
-                return dict(output)
+            self.flag =True
+            return dict(output)
 
     def mix(self, encoded_info, embeddings: List[torch.Tensor]):
         "这里是求平均，应该可以有其他的融合方法，看论文需不需要"

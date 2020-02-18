@@ -40,6 +40,9 @@ if __name__ == '__main__':
     # config_file = 'debug3_1' # 三阶段模型，不用bert
     # exp_name = "exp1"
     # config_file = 'bert_fcn_1'
-    exp_name = "exp1"
-    config_file = 'w_lstm_2_cnn_1_300'
+    # exp_name = "exp1"
+    # config_file = 'w_lstm_2_cnn_1_300'
+    exp_name = "exp3"
+    # config_file = 'w_lstm_2_fcn_1_boe'
+    config_file = 'bert2_linear_bilinear'
     run(exp_name, config_file)

@@ -1,0 +1,103 @@
+{
+  "dataset_reader": {
+    "type": "three_stage",
+    "mode": "sop"
+  },
+  "validation_dataset_reader": {
+    "type": "valid"
+  },
+  "train_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_train.txt",
+  "validation_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_dev.txt",
+  "test_data_path": "/storage/gs2018/liangjiaxi/bishe/data/processed_data/_test.txt",
+  "evaluate_on_test": true,
+  "model": {
+    "type": "threestagemodel",
+    "encoder": {
+      "type": "encoder",
+      "text_field_embedder": {
+        "type": "basic",
+
+        "token_embedders": {
+          "tokens": {
+            "type": "embedding",
+            "pretrained_file": "/home/liangjiaxi/TMP_PROJECT/shuoshibiyesheji/data/original_data/token_vec_300.bin",
+            "embedding_dim": 300,
+            "trainable": true
+          }
+        }
+
+      },
+      "encoder": {
+        "type": "lstm",
+        "num_layers": 2,
+        "bidirectional": true,
+        "input_size": 300,
+        "hidden_size": 150
+      }
+    },
+    "first_decoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 300,
+        "num_layers": 1,
+        "hidden_dims": 1,
+        "activations": "linear"
+      }
+    },
+    "second_decoder": {
+      "type": "feedforward",
+      "feedforward": {
+        "input_dim": 300,
+        "num_layers": 1,
+        "hidden_dims": 1,
+        "activations": "linear"
+      }
+    },
+    "third_decoder": {
+      "type": "my_seq2vec",
+      "seq": {
+        "type": "cnn",
+        "embedding_dim": 300,
+        "num_filters": 49,
+        "ngram_filter_sizes": [3,]
+      }
+
+    },
+    "span_extractor": {
+      "type": "endpoint",
+      "input_dim": 300,
+      "combination": "x+y"
+    },
+    "mode": "sop"
+  },
+  "iterator": {
+    "type": "bucket",
+    "sorting_keys": [["tokens", "tokens___tokens"]],
+    "batch_size": 128
+  },
+  "validation_iterator": {
+    "type": "basic",
+    "batch_size": 128
+  },
+  "distributed": {
+    "cuda_devices": [0, 1],
+    "master_address": "127.0.0.1",
+    "master_port": 29101
+  },
+  "trainer": {
+    "optimizer": {
+      "type": "adam",
+      "lr": 5e-4
+
+    },
+    "learning_rate_scheduler": {
+      "type": "slanted_triangular",
+      "num_epochs": 15,
+      "num_steps_per_epoch": 8829
+    },
+    "validation_metric": "+f1",
+    "num_epochs": 50,
+    //        "grad_norm": 10.0,
+    "patience": 25
+  }
+}
